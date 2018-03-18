@@ -32,11 +32,24 @@ int main()
 {
   uWS::Hub h;
 
-  PID pid_steer, pid_throttle;
-  pid_steer.Init(0.15, 0.0, 2.5);
-  //pid_throttle.Init(0.6, 0.0, 3.0);
+  PID pid;
+  //double p[3] = {0.111222,0.0043165,1.05256};
+  double p[3] = {0,0,0};
+  double dp[3] = {1,1,1};
+  pid.Init(p[0],p[1],p[2]);
 
-  h.onMessage([&pid_steer, &pid_throttle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  int n = 1;
+  int max_n = 500;
+  double total_cte = 0.0;
+  double error = 0.0;
+  double best_error = 10000.00;
+  double tol = 0.01;
+  int p_iterator = 0;
+  int total_iterator = 0;
+  int sub_move = 0;
+  bool first = true;
+  bool second = true;
+  h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first, &sub_move, &second](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -54,28 +67,86 @@ int main()
           double steer_value;
           double throttle_value = 0.3;
           
-          /*
-          * TODO: Calcuate steering value here, remember the steering value is
-          * [-1, 1].
-          * NOTE: Feel free to play around with the throttle and speed. Maybe use
-          * another PID controller to control the speed!
-          */
-
-          pid_steer.UpdateError(cte);
-          steer_value = pid_steer.TotalError();
-
-          //pid_throttle.UpdateError(fabs(cte));
-          //throttle_value = .75-pid_throttle.TotalError();
           
-          // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << std::endl;
+          if (n > max_n){ 
+            if(total_iterator == 0) {
+              best_error = total_cte/max_n;
+            }
+            std::cout << "iteration: " << total_iterator << " ";
+            std::cout << "first: " << first << " ";
+            std::cout << "second: " << second << " ";
+            std::cout << "p_iterator: " << p_iterator << " ";
+            std::cout << "sub_move: " << sub_move << " ";
+            std::cout << "best_error: " << best_error << " ";
+            std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
+            //double sump = p[0]+p[1]+p[2];
+            //std::cout << "sump: " << sump << " ";
+            if(first == true) {
+              p[p_iterator] += dp[p_iterator];
+              pid.Init(p[0], p[1], p[2]);
+              first = false;
+            }else{
+              error = total_cte/max_n;
+              std::cout << "error: " << error << " ";
+              if(error < best_error) {
+                  best_error = error;
+                  dp[p_iterator] *= 1.1;
+                  sub_move += 1;
+                  first = true;
+              }else{
+                std::cout << "else: ";
+                if(second == true) {
+                  p[p_iterator] -= 2 * dp[p_iterator];
+                  pid.Init(p[0], p[1], p[2]);
+                  second = false;
+                }else {
+                  if(error < best_error) {
+                      best_error = error;
+                      dp[p_iterator] *= 1.1;
+                      sub_move += 1;
+                  }else {
+                      p[p_iterator] += dp[p_iterator];
+                      dp[p_iterator] *= 0.9;
+                      sub_move += 1;
+                  }
+                  first = true;
+                  second = true;
+                }
+              }
+              
+            }
 
-          json msgJson;
-          msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = throttle_value;
-          auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+            if(sub_move > 0) {
+              p_iterator = p_iterator+1;
+              sub_move = 0;
+            }
+            if(p_iterator == 3) {
+              p_iterator = 0;
+            }
+            total_cte = 0.0;
+            n = 0;
+            total_iterator = total_iterator+1;
+            
+            std::string reset_msg = "42[\"reset\",{}]";
+            ws.send(reset_msg.data(), reset_msg.length(), uWS::OpCode::TEXT);
+            
+          } else {
+            
+            //Steering value
+            pid.UpdateError(cte);
+            steer_value = pid.TotalError();
+            // DEBUG
+            //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
+            json msgJson;
+            msgJson["steering_angle"] = steer_value;
+            msgJson["throttle"] = throttle_value;
+            auto msg = "42[\"steer\"," + msgJson.dump() + "]";
+            //std::cout << msg << std::endl;
+            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+
+            total_cte = total_cte + pow(cte,2);
+          }
+          n = n+1;
         }
       } else {
         // Manual driving

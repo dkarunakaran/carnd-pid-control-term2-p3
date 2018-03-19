@@ -33,11 +33,11 @@ int main()
   uWS::Hub h;
 
   PID pid;
-  bool twiddle = true;
+  bool twiddle = false;
   //double p[3] = {0.111222,0.0043165,1.05256};
   double p[3] = {0,0,0};
   double dp[3] = {1,1,1};
-  int n = 1;
+  int n = 0;
   int max_n = 500;
   double total_cte = 0.0;
   double error = 0.0;
@@ -52,7 +52,7 @@ int main()
   if(twiddle == true) {
     pid.Init(p[0],p[1],p[2]);
   }else {
-    pid.Init(2.41598,0,4.641);
+    pid.Init(1, 0, 3.31);
   }
   h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first, &sub_move, &second, &twiddle, &best_p](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -71,12 +71,21 @@ int main()
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
           double throttle_value = 0.3;
+          json msgJson;
           
           if (twiddle == true){
+            total_cte = total_cte + pow(cte,2);
+            if(n==0){
+              pid.Init(p[0],p[1],p[2]); 
+            }
+            //Steering value
+            pid.UpdateError(cte);
+            steer_value = pid.TotalError();
+            
+            // DEBUG
+            //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
+            n = n+1;
             if (n > max_n){ 
-              if(total_iterator == 0) {
-                best_error = total_cte/max_n;
-              }
               double sumdp = dp[0]+dp[1]+dp[2];
               std::cout << "iteration: " << total_iterator << " ";
               std::cout << "first: " << first << " ";
@@ -91,7 +100,7 @@ int main()
               //std::cout << "sump: " << sump << " ";
               if(first == true) {
                 p[p_iterator] += dp[p_iterator];
-                pid.Init(p[0], p[1], p[2]);
+                //pid.Init(p[0], p[1], p[2]);
                 first = false;
               }else{
                 error = total_cte/max_n;
@@ -108,7 +117,7 @@ int main()
                   std::cout << "else: ";
                   if(second == true) {
                     p[p_iterator] -= 2 * dp[p_iterator];
-                    pid.Init(p[0], p[1], p[2]);
+                    //pid.Init(p[0], p[1], p[2]);
                     second = false;
                   }else {
                     if(error < best_error) {
@@ -143,39 +152,28 @@ int main()
 
               sumdp = dp[0]+dp[1]+dp[2];
               if(sumdp < 0.20) {
+                //pid.Init(p[0], p[1], p[2]);
                 std::cout << "Best p[0] p[1] p[2]: " << p[0] << p[1] << p[2] << " ";
-                ws.close();
-                std::cout << "Disconnected" << std::endl;
+                //ws.close();
+                //std::cout << "Disconnected" << std::endl;
               } else {
                 std::string reset_msg = "42[\"reset\",{}]";
                 ws.send(reset_msg.data(), reset_msg.length(), uWS::OpCode::TEXT);
               }
               
             } else {
-              
-              //Steering value
-              pid.UpdateError(cte);
-              steer_value = pid.TotalError();
-              // DEBUG
-              //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
-              json msgJson;
               msgJson["steering_angle"] = steer_value;
               msgJson["throttle"] = throttle_value;
               auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-              //std::cout << msg << std::endl;
               ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-
-              total_cte = total_cte + pow(cte,2);
             }
-            n = n+1;
+           
           } else { //twiddle if
-            //Steering value
             pid.UpdateError(cte);
             steer_value = pid.TotalError();
-
+        
             // DEBUG
             std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
-            json msgJson;
             msgJson["steering_angle"] = steer_value;
             msgJson["throttle"] = throttle_value;
             auto msg = "42[\"steer\"," + msgJson.dump() + "]";

@@ -55,7 +55,7 @@ void PID::Twiddle() {
 
 ```
 
-The intial value Kp, Ki, Kd I selected using trail and error method. Then use twiddle to optimise further. 
+The intial value for Kp, Ki, Kd selected using trail and error method. Then use twiddle to optimise further. 
 
 Intial Value I used is 
 ```

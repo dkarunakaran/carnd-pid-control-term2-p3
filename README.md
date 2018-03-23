@@ -4,3 +4,8 @@
 
 ## Overview
 
+In this project we will revisit the lake race track from the Behavioral Cloning Project. This time, however, we will implement a PID controller in C++ to maneuver the vehicle around the track!
+The simulator will provide the cross track error (CTE) and the velocity (mph) in order to compute the appropriate steering angle.
+
+PID stands for Proportional-Integral-Derivative. These three controllers are combined in such a way that it produces a control signal.
+

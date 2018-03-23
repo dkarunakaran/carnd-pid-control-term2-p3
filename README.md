@@ -12,6 +12,7 @@ In this project we will revisit the lake race track from the Behavioral Cloning 
 
 This is very basic controller in control theory and finding proportional, integral, and derivative componets using CTE to findout the control signal. 
 
+Pseudocode to findout the steering value based PID controller algorithm:
 ```
 cte = robot.y
 diff_cte = cte - prev_cte
@@ -20,7 +21,6 @@ int_cte += cte
 steer = -tau_p * cte - tau_d * diff_cte - tau_i * int_cte
 
 ```
-This is the pseudocode to findout the steering value based PID controller algorithm.
 
 PID project code to findout steering value based on the CTE:
 

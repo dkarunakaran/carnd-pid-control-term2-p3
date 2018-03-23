@@ -29,9 +29,4 @@ double PID::TotalError() {
     return (-Kp * p_error) - (Ki * i_error) - (Kd * d_error);
 }
 
-void PID::Twiddle() {
-
-    
-}
-
 

@@ -55,15 +55,13 @@ void PID::Twiddle() {
 
 ```
 
-These functioned get called from main.cpp.
-
 The intial value Kp, Ki, Kd I selected using trail and error method. Then use twiddle to optimise further. 
 
 Intial Value I used is 
 ```
  double p[3] = {0.05, 0.0001, 1.5};
  double dp[3] = {.01, .0001, .1};
-``
+```
 Then use Twiddle to optimise the p values and got the below optimised values for p:
 
 ```

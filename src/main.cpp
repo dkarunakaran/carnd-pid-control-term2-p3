@@ -35,14 +35,14 @@ int main()
   PID pid;
   bool twiddle = false;
   //double p[3] = {0.111222,0.0043165,1.05256};
-  double p[3] = {0,0,0};
-  double dp[3] = {1,1,1};
+  double p[3] = {0.05, 0.0001, 1.5};
+  double dp[3] = {.01, .0001, .1};
   int n = 0;
-  int max_n = 500;
+  int max_n = 600;
   double total_cte = 0.0;
   double error = 0.0;
   double best_error = 10000.00;
-  double tol = 0.2;
+  double tol = 0.001;
   int p_iterator = 0;
   int total_iterator = 0;
   int sub_move = 0;
@@ -52,7 +52,7 @@ int main()
   if(twiddle == true) {
     pid.Init(p[0],p[1],p[2]);
   }else {
-    pid.Init(1, 0, 3.31);
+    pid.Init(0.06, 0.00031, 1.29);
   }
   h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first, &sub_move, &second, &twiddle, &best_p](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -76,6 +76,7 @@ int main()
           if (twiddle == true){
             total_cte = total_cte + pow(cte,2);
             if(n==0){
+              
               pid.Init(p[0],p[1],p[2]); 
             }
             //Steering value
@@ -86,40 +87,42 @@ int main()
             //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
             n = n+1;
             if (n > max_n){ 
-              double sumdp = dp[0]+dp[1]+dp[2];
-              std::cout << "iteration: " << total_iterator << " ";
-              std::cout << "first: " << first << " ";
-              std::cout << "second: " << second << " ";
-              std::cout << "p_iterator: " << p_iterator << " ";
-              std::cout << "sub_move: " << sub_move << " ";
-              std::cout << "best_error: " << best_error << " ";
-              std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-              //std::cout << "dp[0] dp[1] dp[2]: " << dp[0] << " " << dp[1] << " " << dp[2] << " ";
-              std::cout << "sumdp: " << sumdp << " ";
+              
+              
               //double sump = p[0]+p[1]+p[2];
               //std::cout << "sump: " << sump << " ";
               if(first == true) {
+                std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
                 p[p_iterator] += dp[p_iterator];
                 //pid.Init(p[0], p[1], p[2]);
                 first = false;
               }else{
                 error = total_cte/max_n;
-                std::cout << "error: " << error << " ";
-                if(error < best_error) {
+                
+                if(error < best_error && second == true) {
                     best_error = error;
                     best_p[0] = p[0];
                     best_p[1] = p[1];
                     best_p[2] = p[2];
                     dp[p_iterator] *= 1.1;
                     sub_move += 1;
-                    first = true;
+                    std::cout << "iteration: " << total_iterator << " ";
+                    std::cout << "p_iterator: " << p_iterator << " ";
+                    std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
+                    std::cout << "error: " << error << " ";
+                    std::cout << "best_error: " << best_error << " ";
+                    std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
                 }else{
-                  std::cout << "else: ";
+                  //std::cout << "else: ";
                   if(second == true) {
+                    std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
                     p[p_iterator] -= 2 * dp[p_iterator];
                     //pid.Init(p[0], p[1], p[2]);
                     second = false;
                   }else {
+                    std::cout << "iteration: " << total_iterator << " ";
+                    std::cout << "p_iterator: " << p_iterator << " ";
+                    std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
                     if(error < best_error) {
                         best_error = error;
                         best_p[0] = p[0];
@@ -132,15 +135,19 @@ int main()
                         dp[p_iterator] *= 0.9;
                         sub_move += 1;
                     }
-                    first = true;
-                    second = true;
+                    std::cout << "error: " << error << " ";
+                    std::cout << "best_error: " << best_error << " ";
+                    std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
                   }
                 }
                 
               }
+              
 
               if(sub_move > 0) {
                 p_iterator = p_iterator+1;
+                first = true;
+                second = true;
                 sub_move = 0;
               }
               if(p_iterator == 3) {
@@ -150,10 +157,10 @@ int main()
               n = 0;
               total_iterator = total_iterator+1;
 
-              sumdp = dp[0]+dp[1]+dp[2];
-              if(sumdp < 0.20) {
+              double sumdp = dp[0]+dp[1]+dp[2];
+              if(sumdp < tol) {
                 //pid.Init(p[0], p[1], p[2]);
-                std::cout << "Best p[0] p[1] p[2]: " << p[0] << p[1] << p[2] << " ";
+                std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << best_p[1] << best_p[2] << " ";
                 //ws.close();
                 //std::cout << "Disconnected" << std::endl;
               } else {

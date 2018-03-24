@@ -125,7 +125,7 @@ And I got the coeffients as below:
 
 ```
 
-Then I decided to use Twiddle to optimise these coefficents further. I modified the main.cpp to implement Twiddle algorithm. When twiddle varible set to true, simulator runs the car with coeffients till the maximum steps set intially and go through the twiddle algorithm. After completetion of each iteration, simulator reset to intial stage and car runs starts from the beginning to maximum steps. This process continoues until tol value below the allowed value.
+Then I decided to use Twiddle to optimise these coefficents further. I modified the main.cpp to implement Twiddle algorithm. When twiddle variable set to true, simulator runs the car with confidents till the maximum steps set initially and go through the twiddle algorithm. After competition of each iteration, simulator reset to initial stage and car runs starts from the beginning to maximum steps. This process continuous until tol value below the allowed value.
 
 Finally we got the optimised coeffients as below:
 

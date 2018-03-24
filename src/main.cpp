@@ -34,7 +34,6 @@ int main()
 
   PID pid;
   bool twiddle = false;
-  //double p[3] = {0.111222,0.0043165,1.05256};
   double p[3] = {0.05, 0.0001, 1.5};
   double dp[3] = {.01, .0001, .1};
   int n = 0;
@@ -53,6 +52,7 @@ int main()
     pid.Init(p[0],p[1],p[2]);
   }else {
     pid.Init(0.06, 0.00031, 1.29);
+    //pid.Init(0.05, 0.0001, 1.5);
   }
   h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first, &sub_move, &second, &twiddle, &best_p](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.

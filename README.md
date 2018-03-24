@@ -54,15 +54,27 @@ void PID::Twiddle() {
 //Kp, Ki, and Kd are those three parameters to be optimized.
 
 ```
+The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. While system or controller is working, we can tune the controller. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
 
-The intial value for Kp, Ki, Kd selected using trail and error method. Then use twiddle to optimise further. 
+I got the Kp value with oscilating behaviour when I set the value to 0.05 and Ki and Kd set to zero
 
-Intial Value I used is 
+Here is the video with oscilating behaviour:
+
+Then found the Kd value that stops the oscilating behaviour which is set to 1.5 alogn with 0.05 for Kp and zero for Ki.
+
+Here is the video after value for Kp and Kd added:
+
+
+Finally value Ki set as 0.0001 to reduce the steady-state error. 
+
+Initial value for Kp,Ki, Kd set as below:
+
 ```
- double p[3] = {0.05, 0.0001, 1.5};
- double dp[3] = {.01, .0001, .1};
+{0.05, 0.0001, 1.5}
+
 ```
-Then use Twiddle to optimise the p values and got the below optimised values for p:
+
+Then Twiddle algorithm is used to optimise the parameter once we found the intial value and optimised value we got as below:
 
 ```
 0.06, 0.00031, 1.29

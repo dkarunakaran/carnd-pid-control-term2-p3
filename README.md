@@ -54,16 +54,24 @@ void PID::Twiddle() {
 //Kp, Ki, and Kd are those three parameters to be optimized.
 
 ```
+
+### Finding intial value for Kp, Ki, Kd
+
 The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. While system or controller is working, we can tune the controller. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
 
 I got the Kp value with oscilating behaviour when I set the value to 0.05 and Ki and Kd set to zero
 
 Here is the video with oscilating behaviour:
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=iw3D3nSbdPc" target="_blank"><img src="http://img.youtube.com/vi/iw3D3nSbdPc/0.jpg" 
+alt="Pipeline video" width="640" height="420" border="10" /></a>
+
 Then found the Kd value that stops the oscilating behaviour which is set to 1.5 alogn with 0.05 for Kp and zero for Ki.
 
 Here is the video after value for Kp and Kd added:
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=Bj98Vr3Vxho" target="_blank"><img src="http://img.youtube.com/vi/Bj98Vr3Vxho/0.jpg" 
+alt="Pipeline video" width="640" height="420" border="10" /></a>
 
 Finally value Ki set as 0.0001 to reduce the steady-state error. 
 
@@ -74,7 +82,11 @@ Initial value for Kp,Ki, Kd set as below:
 
 ```
 
-Then Twiddle algorithm is used to optimise the parameter once we found the intial value and optimised value we got as below:
+### Twiddle 
+
+Once we set the intial value,  Twiddle algorithm is used to optimise the parameter.
+
+optimised value we got as below:
 
 ```
 0.06, 0.00031, 1.29

@@ -57,7 +57,7 @@ void PID::Twiddle() {
 
 ### Finding intial value for Kp, Ki, Kd
 
-The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. While system or controller is working, we can tune the controller. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
+The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
 
 I got the Kp value with oscilating behaviour when I set the value to 0.05 and Ki and Kd set to zero
 

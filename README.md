@@ -84,9 +84,9 @@ Initial value for Kp,Ki, Kd set as below:
 
 ### Twiddle 
 
-Once we set the intial value,  Twiddle algorithm is used to optimise the parameter.
+Once we set the intial value,  Twiddle algorithm is used to optimise the parameters.
 
-optimised value we got as below:
+Optimised value we got as below:
 
 ```
 0.06, 0.00031, 1.29

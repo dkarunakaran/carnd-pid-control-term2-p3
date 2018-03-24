@@ -1,3 +1,4 @@
+
 # PID Controller project
 
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
@@ -9,6 +10,8 @@ PID stands for Proportional-Integral-Derivative. These three controllers are com
 In this project we will revisit the lake race track from the Behavioral Cloning Project. This time, however, we will implement a PID controller in C++ to maneuver the vehicle around the track! The simulator will provide the cross track error (CTE) and the velocity (mph) in order to compute the appropriate steering angle.
 
 I am going to discuss based on how to use PID for steering angles.
+
+## PID Controller components
 
 ### Cross Track Error
 A cross track error is a distance of the vehicle from trajectory. In theory it’s best suited to control the car by steering in proportion to Cross Track Error(CTE).
@@ -86,238 +89,46 @@ function(tol=0.2) {
 }
 ```
 
+## Effect of the P, I, D components
 
+The P, or "proportional", component had the most directly observable effect on the car’s behavior. It causes the car to steer proportional (and opposite) to the car’s distance from the lane center(CTE) - if the car is far to the right it steers hard to the left, if it’s slightly to the left it steers slightly to the right.
 
+I got the P value with oscillating behaviour when I set the value to 0.05 and I and D set to zero
 
-## Implementation
-
-This is very basic controller in control theory and finding proportional, integral, and derivative componets using CTE to findout the control signal. 
-
-Pseudocode to findout the steering value based PID controller algorithm:
-```
-cte = robot.y
-diff_cte = cte - prev_cte
-prev_cte = cte
-int_cte += cte
-steer = -tau_p * cte - tau_d * diff_cte - tau_i * int_cte
-
-```
-
-PID project code to findout steering value based on the CTE:
-
-```
-void PID::Init(double Kp, double Ki, double Kd) {
-    this->Kp = Kp;
-    this->Ki = Ki;
-    this->Kd = Kd;
-    this->p_error = 0.0;
-    this->i_error = 0.0;
-    this->d_error = 0.0;
-}
-
-void PID::UpdateError(double cte) {
-    d_error = cte - p_error;
-    p_error = cte;
-    i_error += cte;
-}
-
-double PID::TotalError() {
-    return (-Kp * p_error) - (Ki * i_error) - (Kd * d_error);
-}
-
-void PID::Twiddle() {
-
-    
-}
-
-//cte is the cross track error fed into the controller from a sensor.
-//p_error, i_error, and d_error are proportional, integral and derivativecomponents’ errors respectively.
-//Kp, Ki, and Kd are those three parameters to be optimized.
-
-```
-
-### Finding initial value for Kp, Ki, Kd
-
-The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
-
-I got the Kp value with oscillating behaviour when I set the value to 0.05 and Ki and Kd set to zero
-
-Here is the video with oscillating behaviour:
+Here is the video with P value set to above:
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=iw3D3nSbdPc" target="_blank"><img src="http://img.youtube.com/vi/iw3D3nSbdPc/0.jpg" 
 alt="Pipeline video" width="640" height="420" border="10" /></a>
 
-Then found the Kd value that stops the oscillating behaviour which is set to 1.5 alogn with 0.05 for Kp and zero for Ki.
+The D, or "differential", component counteracts the P component’s tendency to ring and overshoot the center line. A properly tuned D parameter will cause the car to approach the center line smoothly without ringing.
 
-Here is the video after value for Kp and Kd added:
+Then found the D value that stops the oscillating behaviour which is set to 1.5 alogn with 0.05 for P and zero for I.
+
+Here is the video after value for P and D as above:
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=Bj98Vr3Vxho" target="_blank"><img src="http://img.youtube.com/vi/Bj98Vr3Vxho/0.jpg" 
 alt="Pipeline video" width="640" height="420" border="10" /></a>
 
-Finally value Ki set as 0.0001 to reduce the steady-state error. 
+The I, or "integral", component counteracts a bias in the CTE which prevents the P-D controller from reaching the center line. This bias can take several forms, such as a steering drift , but I believe that in this particular implementation the I component particularly serves to reduce the CTE around curves.
 
-Initial value for Kp,Ki, Kd set as below:
+In the case of the simulator, no bias is present. We set value to zero.
+
+
+## Finding the right coefficients
+
+The intial value for Kp, Ki, Kd selected using trail and error method. It is a simple method of PID controller tuning. In this method, first we have to set Ki and Kd values to zero and increase proportional term (Kp) until system reaches to oscillating behavior. Then Kd was tuned to reduced oscillation and then Ki to reduce steady-state error
+
+And I got the coeffients as below:
 
 ```
 {0.05, 0.0001, 1.5}
 
 ```
 
-### Twiddle 
+Then I decided to use Twiddle to optimise these coefficents further. I modified the main.cpp to implement Twiddle algorithm. When twiddle varible set to true, simulator runs the car with coeffients till the maximum steps set intially and go through the twiddle algorithm. After completetion of each iteration, simulator reset to intial stage and car runs starts from the beginning to maximum steps. This process continoues until tol value below the allowed value.
 
-Once we set the intial value,  Twiddle algorithm is used to optimise the parameters.
-
-Optimised value we got as below:
+Finally we got the optimised coeffients as below:
 
 ```
 0.06, 0.00031, 1.29
-```
-
-Once I found the the optimised value, set the twiddle value to false to run the car through the simulator.
-
-```
-bool twiddle = false;
-```
-
-Actual twiddle algorothm in python as follows:
-
-```
-def twiddle(tol=0.2): 
-    p = [0, 0, 0]
-    dp = [1, 1, 1]
-    robot = make_robot()
-    x_trajectory, y_trajectory, best_err = run(robot, p)
-
-    it = 0
-    while sum(dp) > tol:
-        print("Iteration {}, best error = {}".format(it, best_err))
-        for i in range(len(p)):
-            p[i] += dp[i]
-            robot = make_robot()
-            x_trajectory, y_trajectory, err = run(robot, p)
-
-            if err < best_err:
-                best_err = err
-                dp[i] *= 1.1
-            else:
-                p[i] -= 2 * dp[i]
-                robot = make_robot()
-                x_trajectory, y_trajectory, err = run(robot, p)
-
-                if err < best_err:
-                    best_err = err
-                    dp[i] *= 1.1
-                else:
-                    p[i] += dp[i]
-                    dp[i] *= 0.9
-        it += 1
-    return p
-
-```
-
-And I had to modify it for this project and code as follows:
-```
-if (twiddle == true){
-    total_cte = total_cte + pow(cte,2);
-    if(n==0){
-
-      pid.Init(p[0],p[1],p[2]); 
-    }
-    //Steering value
-    pid.UpdateError(cte);
-    steer_value = pid.TotalError();
-
-    // DEBUG
-    //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
-    n = n+1;
-    if (n > max_n){ 
-
-
-      //double sump = p[0]+p[1]+p[2];
-      //std::cout << "sump: " << sump << " ";
-      if(first == true) {
-        std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-        p[p_iterator] += dp[p_iterator];
-        //pid.Init(p[0], p[1], p[2]);
-        first = false;
-      }else{
-        error = total_cte/max_n;
-
-        if(error < best_error && second == true) {
-            best_error = error;
-            best_p[0] = p[0];
-            best_p[1] = p[1];
-            best_p[2] = p[2];
-            dp[p_iterator] *= 1.1;
-            sub_move += 1;
-            std::cout << "iteration: " << total_iterator << " ";
-            std::cout << "p_iterator: " << p_iterator << " ";
-            std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-            std::cout << "error: " << error << " ";
-            std::cout << "best_error: " << best_error << " ";
-            std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
-        }else{
-          //std::cout << "else: ";
-          if(second == true) {
-            std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-            p[p_iterator] -= 2 * dp[p_iterator];
-            //pid.Init(p[0], p[1], p[2]);
-            second = false;
-          }else {
-            std::cout << "iteration: " << total_iterator << " ";
-            std::cout << "p_iterator: " << p_iterator << " ";
-            std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-            if(error < best_error) {
-                best_error = error;
-                best_p[0] = p[0];
-                best_p[1] = p[1];
-                best_p[2] = p[2];
-                dp[p_iterator] *= 1.1;
-                sub_move += 1;
-            }else {
-                p[p_iterator] += dp[p_iterator];
-                dp[p_iterator] *= 0.9;
-                sub_move += 1;
-            }
-            std::cout << "error: " << error << " ";
-            std::cout << "best_error: " << best_error << " ";
-            std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
-          }
-        }
-
-      }
-
-
-      if(sub_move > 0) {
-        p_iterator = p_iterator+1;
-        first = true;
-        second = true;
-        sub_move = 0;
-      }
-      if(p_iterator == 3) {
-        p_iterator = 0;
-      }
-      total_cte = 0.0;
-      n = 0;
-      total_iterator = total_iterator+1;
-
-      double sumdp = dp[0]+dp[1]+dp[2];
-      if(sumdp < tol) {
-        //pid.Init(p[0], p[1], p[2]);
-        std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << best_p[1] << best_p[2] << " ";
-        //ws.close();
-        //std::cout << "Disconnected" << std::endl;
-      } else {
-        std::string reset_msg = "42[\"reset\",{}]";
-        ws.send(reset_msg.data(), reset_msg.length(), uWS::OpCode::TEXT);
-      }
-
-    } else {
-      msgJson["steering_angle"] = steer_value;
-      msgJson["throttle"] = throttle_value;
-      auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-      ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-    }
-
-  } 
 ```
